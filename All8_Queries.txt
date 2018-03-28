@@ -1,0 +1,110 @@
+1)Find all the users that took a trip from 29th and 5th to Bleecker street.
+
+-->SELECT u.`fname`, u.`lname`, t.`trip_id`, t.`destination`, t.`pick_up`, t.`driver_id`, t.`price`, t.`total_time`, t.`total_distance`, t.`uid`, t.`start_time`, t.`end_time` FROM `trip_info` t 
+JOIN user u ON t.`uid` = u.`uid`
+WHERE t.`pick_up` like '%29%' AND t.`destination` like '%bleecker%'
+UNION ALL
+SELECT u.`fname`, u.`lname`, t.`trip_id`, t.`destination`, t.`pick_up`, t.`driver_id`, t.`price`, t.`total_time`, t.`total_distance`, t.`uid`, t.`start_time`, t.`end_time` FROM `trip_info` t 
+JOIN user u ON t.`uid` = u.`uid`
+WHERE t.`pick_up` like '%5th%' AND t.`destination` like '%bleecker%'
+
+*********************************************
+
+2)Generate a list of all the users who are under the age of 35.
+
+-->SELECT `uid`, `fname`, `lname`, `phone`, `age`, `card_info`, `email`, `signup_date`, `status` FROM `user` WHERE `age` < 35
+
+*********************************************
+
+3)Generate a list of all the drivers who drove 7 days in a row.
+
+-->SET @runtot:=0;
+
+SELECT D.fname "Driver First Name", D.lname "Driver Last Name" , A.curr_id as "Driver ID" , A.curr_date "Trip Date" FROM (
+select curr_id, curr_date, 
+  case when curr_id = Pre_id
+  then @runtot:=@runtot+1
+  else @runtot:=0 end as RunningTotal
+FROM (
+
+SELECT 
+t1.driver_id curr_id, 
+t1.trip_date curr_date, 
+p1.driver_id Pre_id,
+p1.trip_date Pre_date
+from (select * from trip_info order by driver_id, trip_date) t1
+left join (select * from trip_info order by driver_id, trip_date) p1
+    on t1.driver_id = p1.driver_id
+    and date(t1.trip_date) - interval 1 day = date(p1.trip_date)
+order by curr_id, curr_date
+    ) B
+    ORDER BY curr_id, curr_date
+    ) A
+    JOIN driver D 
+    ON A.curr_id = D.driver_id
+    WHERE RunningTotal <= 7 and  RunningTotal >= 1
+    
+
+*********************************************
+
+
+4)List all the users who have deleted/deactivated their account (you may
+want to consider the subscription status as a column OR a table).
+
+-->SELECT `uid`, `fname`, `lname`, `phone`, `age`, `card_info`, `email`, `signup_date`, 
+`status` FROM `user` WHERE `status` = 'Deactivate'
+
+
+*********************************************
+
+
+5)Find all users for New York City, Chicago, Boston and Los Angeles.
+
+-->SELECT  u1.fname, u1.lname, t1.* FROM `trip_info` t1 
+INNER JOIN `user` u1 
+ON t1.uid = u1.uid 
+WHERE t1.`destination` LIKE "%New York%" OR t1.`destination` LIKE "%Chicago%" OR 
+t1.`destination` LIKE "%Boston%" OR t1.`destination` LIKE "%Los Angeles%" 
+
+
+*********************************************
+
+
+6)Display complete user information or all users of all your users and
+drivers. (Names / addresses / cars they drive etc.)
+
+-->SELECT u.*, d.*, t.* FROM `trip_info` t 
+LEFT JOIN user u ON t.`uid` = u.`uid`
+LEFT JOIN driver d ON d.`driver_id` = t.`driver_id`
+
+
+*********************************************
+
+7)Generate and display a list of all the users who have spent more than
+$500 on our service from the time they signed up for your service
+
+-->SELECT U.fname AS `First Name`, U.lname AS 'Last Name', X.`Total Amount` FROM
+(
+SELECT SUM(`price`) as `Total Amount`, `uid` FROM `trip_info` GROUP BY `uid` HAVING SUM(`price`) > 500
+) AS X
+JOIN user U
+ON U.`uid` = X.`uid`
+
+*********************************************
+
+8)List all of the trips that choose one user of your choice (I would name a
+user Scotty and choose him) took since they have signed up for your
+service. 
+
+-->SELECT u.*, d.*, t.* FROM `trip_info` t 
+LEFT JOIN user u ON t.`uid` = u.`uid`
+LEFT JOIN driver d ON d.`driver_id` = t.`driver_id`
+WHERE u.fname = 'Minerva'
+
+Note: I choose name here as ‘Minerva’
+
+
+
+
+
+
